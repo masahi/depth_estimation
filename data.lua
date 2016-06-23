@@ -5,9 +5,9 @@ local npy4th = require 'npy4th'
 local depths = npy4th.loadnpy('depths.npy'):transpose(2,3)
 local images = npy4th.loadnpy('images.npy'):transpose(3,4)
 
-local n_data = depths:size()[1]
+n_data = depths:size()[1]
 local idx = 1
-local batch_size = 10
+batch_size = 10
 
 local input_width = 320
 local input_height = 240
@@ -40,5 +40,22 @@ function load_data()
    end
    
    return input, gt
+end
+
+function load_test_data()
+   local _input = images[{{n_data-batch_size+2, n_data}}]
+   local _gt = depths[{{n_data-batch_size+2, n_data}}]:reshape(9, 1, depths:size()[2], depths:size()[3])
+
+   print(_input:size())
+   print(_gt:size())
+
+   local input = torch.Tensor(9, 3, input_height, input_width)
+   local gt = torch.Tensor(9, 1, output_height, output_width)
+   for i = 1, 9 do
+     input[i] = input_resample:forward(_input[i]:double())
+     gt[i] = output_resample:forward(_gt[i]:double())
+   end
+
+   return input, gt   
 end
 
