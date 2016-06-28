@@ -6,7 +6,6 @@ local model_file = 'vgg/VGG_ILSVRC_16_layers.caffemodel'
 
 local vgg_net = loadcaffe.load(proto_file, model_file)
 
-
 local cnn = nn.Sequential()
 
 local n_output = -1
@@ -30,7 +29,10 @@ for i = 1, #vgg_net do
   end
 
   if torch.isTypeOf(layer, 'nn.SpatialMaxPooling') then
-     cnn:add(layer)
+
+     conv = nn.SpatialConvolution(n_output, n_output, 5, 5, 2,2, 2, 2)
+     cnn:add(conv)
+
   end
   
 end

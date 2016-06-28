@@ -6,9 +6,28 @@ require 'optim'
 require 'data'
 
 local npy4th = require 'npy4th'
-cutorch.setDevice(2)
 
-cnn = dofile('model.lua')
+
+local model_file = arg[1]
+local max_epock = tonumber(arg[2])
+local gpu = tonumber(arg[3])
+local out_file = arg[4]
+local resume = tonumber(arg[5])
+local lr = tonumber(arg[6])
+
+cutorch.setDevice(gpu)
+print('Learning rate', lr)
+if resume == 1 then
+   checkpoint = torch.load(model_file)
+   cnn = checkpoint.model
+   iter_begin = checkpoint.iter + 1
+   print('resuming from iter', iter_begin)   
+else
+   print('training from scratch') 
+   cnn = dofile(model_file)
+   iter_begin = 1
+end  
+
 cnn:cuda()
 criterion = nn.MSECriterion()
 criterion.sizeAverage = false
@@ -16,10 +35,10 @@ criterion:cuda()
 
 cudnn.convert(cnn, cudnn)
 
-local max_epock = 100
-
 cnn:training()
 parameters, gradParameters = cnn:getParameters()
+
+print('Number of parameters:', parameters:size()[1])
 
 
 function f(param)
@@ -41,7 +60,7 @@ function f(param)
 end
 
 optimState = {
-  learningRate = 1e-5,
+  learningRate = lr,
   weightDecay = 0.0005,
   momentum = 0.9,
   learningRateDecay = 1e-7,
@@ -60,22 +79,20 @@ function train()
    
 end
 
-for i = 1, max_epock do
+for i = iter_begin, max_epock do
+--i = 1
+--while true do
    avg_loss = train()
    print(i, avg_loss)
+
+  if i % 50 == 0 then
+    local checkpoint = {}
+    cnn:clearState()
+    checkpoint.model = cnn
+    checkpoint.iter = i
+    torch.save(out_file, checkpoint)
+  end
+
+  i = i + 1
+   
 end
-
-input, gt = load_test_data()
-
-pred = cnn:forward(input:cuda())
-npy4th.savenpy('pred.npy', pred)
-
-local checkpoint = {}
-model:clearState()
-model:float()
-cudnn.convert(cnn, nn)
-checkpoint.model = cnn
-torch.save('model.t7', checkpoint)
-
-
-

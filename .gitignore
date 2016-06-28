@@ -1,4 +1,7 @@
 vgg
 test
+*.t7
+*.ipynb
+*.log
 *.npy
 *.mat

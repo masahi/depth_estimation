@@ -11,7 +11,8 @@ local cnn = nn.Sequential()
 
 local n_output = -1
 
-for i = 1, #vgg_net do
+--for i = 1, #vgg_net do
+for i = 1, 17 do
   local layer = vgg_net:get(i)
   if torch.isTypeOf(layer, 'nn.SpatialConvolution') then
     if i == 1 then
@@ -42,7 +43,10 @@ cnn:add(nn.SpatialFullConvolution(n_deconv_input, n_deconv_input / 2, 4, 4, 2, 2
 --cnn:add(nn.SpatialConvolution
 cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 2)):add(nn.ReLU(true))
 
-cnn:add(nn.SpatialFullConvolution(n_deconv_input/2, 1, 4, 4, 2, 2, 1, 1))
+cnn:add(nn.SpatialFullConvolution(n_deconv_input/2, n_deconv_input/4, 4, 4, 2, 2, 1, 1))
+cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 4)):add(nn.ReLU(true))
+
+cnn:add(nn.SpatialFullConvolution(n_deconv_input/4, 1, 4, 4, 2, 2, 1, 1))
 
 -- cnn:add(nn.SpatialFullConvolution(n_deconv_input / 2 , n_deconv_input / 4, 4, 4, 2, 2, 1, 1))
 -- cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 4)):add(nn.ReLU(true))
