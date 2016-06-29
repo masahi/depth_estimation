@@ -38,18 +38,28 @@ local n_deconv_input = n_output
 
 --cnn:add(nn.SpatialFullConvolution(n_deconv_input, 1, 4, 4, 2, 2, 1, 1))
 cnn:add(nn.SpatialFullConvolution(n_deconv_input, n_deconv_input / 2, 4, 4, 2, 2, 1, 1))
---cnn:add(nn.SpatialConvolution
+cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 2)):add(nn.ReLU(true))
+cnn:add(nn.SpatialConvolution(n_deconv_input / 2, n_deconv_input /2, 3, 3, 1,1,1,1))
 cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 2)):add(nn.ReLU(true))
 
 cnn:add(nn.SpatialFullConvolution(n_deconv_input / 2 , n_deconv_input / 4, 4, 4, 2, 2, 1, 1))
 cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 4)):add(nn.ReLU(true))
+cnn:add(nn.SpatialConvolution(n_deconv_input / 4, n_deconv_input /4, 3, 3, 1,1,1,1))
+cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 4)):add(nn.ReLU(true))
 
 cnn:add(nn.SpatialFullConvolution(n_deconv_input / 4 , n_deconv_input / 8, 4, 4, 2, 2, 1, 1))
 cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 8)):add(nn.ReLU(true))
+cnn:add(nn.SpatialConvolution(n_deconv_input / 8, n_deconv_input /8, 3, 3, 1,1,1,1))
+cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 8)):add(nn.ReLU(true))
+
 
 cnn:add(nn.SpatialFullConvolution(n_deconv_input / 8 , n_deconv_input / 16, 4, 4, 2, 2, 1, 1))
 cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 16)):add(nn.ReLU(true))
+cnn:add(nn.SpatialConvolution(n_deconv_input / 16, n_deconv_input /16, 3, 3, 1,1,1,1))
+cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 16)):add(nn.ReLU(true))
 
 cnn:add(nn.SpatialFullConvolution(n_deconv_input / 16 , 1, 4, 4, 2, 2, 1, 1))
+cnn:add(nn.SpatialBatchNormalization(1)):add(nn.ReLU(true))
+cnn:add(nn.SpatialConvolution(1, 1, 3, 3, 1,1,1,1))
 
 return cnn

@@ -29,7 +29,10 @@ for i = 1, #vgg_net do
   end
 
   if torch.isTypeOf(layer, 'nn.SpatialMaxPooling') then
-     cnn:add(layer)
+     conv = nn.SpatialConvolution(n_output, n_output, 5, 5, 2,2, 2, 2)
+     cnn:add(conv)
+     cnn:add(nn.SpatialBatchNormalization(n_output,1e-3))
+     cnn:add(nn.ReLU(true))
   end
   
 end

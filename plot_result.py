@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 from scipy.io import loadmat
 
 test_ind = loadmat('splits.mat')['testNdxs'] - 1
-preds = np.load('pred_test.npy')
 #test_ind = loadmat('splits.mat')['trainNdxs'] - 1
-#preds = np.load('pred.npy')
+
+preds = np.load('pred.npy')
 imgs = np.load('images.npy').transpose((0,3,2,1))[test_ind]
 gts = np.load('depths.npy').transpose((0,2,1))[test_ind]
 

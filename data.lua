@@ -54,11 +54,11 @@ function load_data()
 end
 
 function load_test_data()
-   -- test_depths = depths:index(1, test_idx:long())
-   -- test_images = images:index(1, test_idx:long())
+   test_depths = depths:index(1, test_idx:long())
+   test_images = images:index(1, test_idx:long())
 
-  test_depths = depths:index(1, train_idx:long())
-  test_images = images:index(1, train_idx:long())
+  -- test_depths = depths:index(1, train_idx:long())
+  -- test_images = images:index(1, train_idx:long())
    
    return input_resample:forward(test_images:double()),
           output_resample:forward(test_depths:double())
