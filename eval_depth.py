@@ -6,7 +6,7 @@ from pylab import *
 
 test_ind = loadmat('splits.mat')['testNdxs'].flatten() - 1
 depths = np.load('depths.npy').transpose((0,2,1))[test_ind]
-preds = np.load('pred.npy')
+preds = np.load('pred8.npy')
 
 abs_diff = 0
 sq_diff = 0

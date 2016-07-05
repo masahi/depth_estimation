@@ -5,3 +5,5 @@ test
 *.log
 *.npy
 *.mat
+*.pdf
+*.html

@@ -6,6 +6,7 @@ local model_file = 'vgg/VGG_ILSVRC_16_layers.caffemodel'
 
 local vgg_net = loadcaffe.load(proto_file, model_file)
 
+
 local cnn = nn.Sequential()
 
 local n_output = -1
@@ -36,20 +37,22 @@ end
 
 local n_deconv_input = n_output
 
-cnn:add(nn.SpatialFullConvolution(n_deconv_input, 1, 4, 4, 2, 2, 1, 1))
+--cnn:add(nn.SpatialFullConvolution(n_deconv_input, 1, 4, 4, 2, 2, 1, 1))
 cnn:add(nn.SpatialFullConvolution(n_deconv_input, n_deconv_input / 2, 4, 4, 2, 2, 1, 1))
 --cnn:add(nn.SpatialConvolution
 cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 2)):add(nn.ReLU(true))
 
-cnn:add(nn.SpatialFullConvolution(n_deconv_input / 2 , n_deconv_input / 4, 4, 4, 2, 2, 1, 1))
-cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 4)):add(nn.ReLU(true))
+cnn:add(nn.SpatialFullConvolution(n_deconv_input/2, 1, 4, 4, 2, 2, 1, 1))
 
-cnn:add(nn.SpatialFullConvolution(n_deconv_input / 4 , n_deconv_input / 8, 4, 4, 2, 2, 1, 1))
-cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 8)):add(nn.ReLU(true))
+-- cnn:add(nn.SpatialFullConvolution(n_deconv_input / 2 , n_deconv_input / 4, 4, 4, 2, 2, 1, 1))
+-- cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 4)):add(nn.ReLU(true))
 
-cnn:add(nn.SpatialFullConvolution(n_deconv_input / 8 , n_deconv_input / 16, 4, 4, 2, 2, 1, 1))
-cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 16)):add(nn.ReLU(true))
+-- cnn:add(nn.SpatialFullConvolution(n_deconv_input / 4 , n_deconv_input / 8, 4, 4, 2, 2, 1, 1))
+-- cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 8)):add(nn.ReLU(true))
 
-cnn:add(nn.SpatialFullConvolution(n_deconv_input / 16 , 1, 4, 4, 2, 2, 1, 1))
+-- cnn:add(nn.SpatialFullConvolution(n_deconv_input / 8 , n_deconv_input / 16, 4, 4, 2, 2, 1, 1))
+-- cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 16)):add(nn.ReLU(true))
+
+-- cnn:add(nn.SpatialFullConvolution(n_deconv_input / 16 , 1, 4, 4, 2, 2, 1, 1))
 
 return cnn

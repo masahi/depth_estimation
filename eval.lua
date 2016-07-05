@@ -10,8 +10,8 @@ local npy4th = require 'npy4th'
 
 input, gt = load_test_data()
 print(input:size())
-cutorch.setDevice(1 )
-cnn = torch.load('model3.t7').model
+cutorch.setDevice(2)
+cnn = torch.load('model8.t7').model
 cnn:evaluate()
 cnn:cuda()
 cudnn.convert(cnn, cudnn)

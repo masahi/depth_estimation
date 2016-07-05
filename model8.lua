@@ -13,14 +13,15 @@ local n_output = -1
 for i = 1, #vgg_net do
   local layer = vgg_net:get(i)
   if torch.isTypeOf(layer, 'nn.SpatialConvolution') then
-    if i == 1 then
-      local w = layer.weight:clone()
-      layer.weight[{ {}, 1, {}, {} }]:copy(w[{ {}, 3, {}, {} }])
-      layer.weight[{ {}, 3, {}, {} }]:copy(w[{ {}, 1, {}, {} }])
+    -- if i == 1 then
+    --   local w = layer.weight:clone()
+    --   layer.weight[{ {}, 1, {}, {} }]:copy(w[{ {}, 3, {}, {} }])
+    --   layer.weight[{ {}, 3, {}, {} }]:copy(w[{ {}, 1, {}, {} }])
 
-    end
-    
-    cnn:add(layer)
+    -- end
+
+    conv = nn.SpatialConvolution(layer.nInputPlane, layer.nOutputPlane, 3, 3, 1,1,1,1)
+    cnn:add(conv)
     cnn:add(nn.SpatialBatchNormalization(layer.nOutputPlane,1e-3))
     cnn:add(nn.ReLU(true))
 
@@ -29,14 +30,17 @@ for i = 1, #vgg_net do
   end
 
   if torch.isTypeOf(layer, 'nn.SpatialMaxPooling') then
-     cnn:add(layer)
+     conv = nn.SpatialConvolution(n_output, n_output, 5, 5, 2,2, 2, 2)
+     cnn:add(conv)
+     cnn:add(nn.SpatialBatchNormalization(n_output,1e-3))
+     cnn:add(nn.ReLU(true))
   end
   
 end
 
 local n_deconv_input = n_output
 
-cnn:add(nn.SpatialFullConvolution(n_deconv_input, 1, 4, 4, 2, 2, 1, 1))
+--cnn:add(nn.SpatialFullConvolution(n_deconv_input, 1, 4, 4, 2, 2, 1, 1))
 cnn:add(nn.SpatialFullConvolution(n_deconv_input, n_deconv_input / 2, 4, 4, 2, 2, 1, 1))
 --cnn:add(nn.SpatialConvolution
 cnn:add(nn.SpatialBatchNormalization(n_deconv_input / 2)):add(nn.ReLU(true))
