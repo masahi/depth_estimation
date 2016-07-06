@@ -4,21 +4,21 @@ require 'cunn'
 require 'cudnn'
 require 'optim'
 
-require 'data'
+require 'data_make3d'
 
-local height = 256
-local width = 320
+local height = 480
+local width = 352
 
---cutorch.setDevice(2)
+cutorch.setDevice(2)
 
 model_file = 'model3.lua'
 cnn = dofile(model_file)
---cnn:cuda()
+cnn:cuda()
 
---cudnn.convert(cnn, cudnn)
+cudnn.convert(cnn, cudnn)
 
---input = torch.rand(8, 3, height, width):cuda()
-input = torch.rand(8, 3, height, width)
+input = torch.rand(8, 3, height, width):cuda()
+--input = torch.rand(8, 3, height, width)
 
 output = cnn:forward(input)
 print(output:size())
