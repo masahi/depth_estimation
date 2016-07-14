@@ -6,12 +6,12 @@ require 'optim'
 
 require 'data_make3d'
 
-local height = 480
-local width = 352
+local height = 240
+local width = 320
 
 cutorch.setDevice(2)
 
-model_file = 'model3.lua'
+model_file = 'model_novgg.lua'
 cnn = dofile(model_file)
 cnn:cuda()
 

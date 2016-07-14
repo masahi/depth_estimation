@@ -3,8 +3,8 @@ require 'nnx'
 local matio = require 'matio'
 
 local npy4th = require 'npy4th'
-local depths = npy4th.loadnpy('depths.npy'):transpose(2,3)
-local images = npy4th.loadnpy('images.npy'):transpose(3,4)
+local depths = npy4th.loadnpy('depths.npy')
+local images = npy4th.loadnpy('images.npy')
 local splits = matio.load('splits.mat')
 
 local train_idx = splits['trainNdxs']
@@ -21,10 +21,10 @@ local idx = 1
 batch_size = 8
 
 local input_width = 320
-local input_height = 256
+local input_height = 240
 
 local output_width = 320
-local output_height = 256
+local output_height = 240
 
 local input_resample = nn.SpatialReSampling{owidth=input_width,oheight=input_height}
 local output_resample = nn.SpatialReSampling{owidth=output_width,oheight=output_height}
@@ -53,14 +53,24 @@ function load_data()
    return input, gt
 end
 
-function load_test_data()
-   test_depths = depths:index(1, test_idx:long())
-   test_images = images:index(1, test_idx:long())
+function load_train_data()
 
-  -- test_depths = depths:index(1, train_idx:long())
-  -- test_images = images:index(1, train_idx:long())
+   return input_resample:forward(train_images:double()),
+          output_resample:forward(train_depths:double())
    
+end
+
+function load_test_data()
+   test_images = images:index(1, test_idx:long())   
+   test_depths = depths:index(1, test_idx:long())
+
    return input_resample:forward(test_images:double()),
           output_resample:forward(test_depths:double())
+end
+
+function load_all_data()
+   
+   return input_resample:forward(images:double()),
+          output_resample:forward(depths:double())
 end
 

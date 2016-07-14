@@ -7,7 +7,6 @@ require 'data'
 
 local npy4th = require 'npy4th'
 
-
 local model_file = arg[1]
 local max_epock = tonumber(arg[2])
 local gpu = tonumber(arg[3])
@@ -30,7 +29,7 @@ end
 
 cnn:cuda()
 criterion = nn.MSECriterion()
-criterion.sizeAverage = false
+--criterion.sizeAverage = false
 criterion:cuda()
 
 cudnn.convert(cnn, cudnn)
@@ -39,7 +38,6 @@ cnn:training()
 parameters, gradParameters = cnn:getParameters()
 
 print('Number of parameters:', parameters:size()[1])
-
 
 function f(param)
    if param ~= parameters then parameters:copy(x) end
@@ -71,7 +69,8 @@ function train()
 
    loss = 0
    for i = 1, n_iter do
-     params, fs = optim.sgd(f, parameters, optimState)
+     params, fs = optim.adadelta(f, parameters, optimState)
+--     params, fs = optim.sgd(f, parameters, optimState)     
      loss = loss + fs[1]
    end
 
@@ -85,14 +84,18 @@ for i = iter_begin, max_epock do
    avg_loss = train()
    print(i, avg_loss)
 
-  if i % 50 == 0 then
-    local checkpoint = {}
-    cnn:clearState()
-    checkpoint.model = cnn
-    checkpoint.iter = i
-    torch.save(out_file, checkpoint)
-  end
-
+   if i % 10 == 0 then
+      --TODO train, test acc
+   end   
+    
+   if i % 50 == 0 then
+     local checkpoint = {}
+     cnn:clearState()
+     checkpoint.model = cnn
+     checkpoint.iter = i
+     torch.save(out_file, checkpoint)
+   end
+ 
   i = i + 1
    
 end

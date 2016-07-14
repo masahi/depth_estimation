@@ -17,17 +17,20 @@ cnn:cuda()
 cudnn.convert(cnn, cudnn)
 
 input = input:cuda()
-pred = torch.Tensor(input:size()[1], 460, 345)
+--pred = torch.Tensor(input:size()[1], 460, 345)
+pred = torch.Tensor(input:size()[1], 480, 352)
 print(pred:size())
 
-local output_resample = nn.SpatialReSampling{owidth=460,oheight=345}
+local output_resample = nn.SpatialReSampling{owidth=345,oheight=460}
 
 for i=1,pred:size()[1] do
    inp = input[i]:reshape(1,3, 480, 352)
    --print(i, pred:size())
    out = cnn:forward(inp)
+   print(out:size())
    --print(out:size())
-   pred[i] = output_resample:forward(out[1]:double())
+   --pred[i] = output_resample:forward(out[1]:double())
+   pred[i] = out[1]:double()
 end
 
 npy4th.savenpy('pred_m3d.npy', pred)
