@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import loadmat
 
-data = np.loadtxt('loss_adadelta.log')
+data = np.loadtxt('loss_avg.log')
 
 iters = data[:, 0].astype(int)
 loss = data[:, 1]

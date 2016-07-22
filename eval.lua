@@ -12,7 +12,7 @@ input, gt = load_all_data()
 print(input:size())
 cutorch.setDevice(2)
 --cnn = torch.load('model3.t7').model
-cnn = torch.load('model_novgg.t7').model
+cnn = torch.load('model_novgg_moredata.t7').model
 cnn:evaluate()
 cnn:cuda()
 cudnn.convert(cnn, cudnn)

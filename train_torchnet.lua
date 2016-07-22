@@ -1,15 +1,6 @@
 require 'optim'
-
-print('Using torchnet')
 local tnt = require 'torchnet'
 
--- local cmd = torch.CmdLine()
--- cmd:option('-usegpu', true, 'use gpu for training')
-
--- local config = cmd:parse(arg)
--- print(string.format('running on %s', config.usegpu and 'GPU' or 'CPU'))
-
--- function that sets of dataset iterator:
 local function getIterator(mode)
    return tnt.ParallelDatasetIterator{
       nthread = 1,
@@ -17,32 +8,27 @@ local function getIterator(mode)
       closure = function()
 
          local matio = require 'matio'
-
-
          local npy4th = require 'npy4th'
          local all_depths = npy4th.loadnpy('depths.npy')
          local all_images = npy4th.loadnpy('images.npy')
-         local splits = matio.load('splits.mat')
+         local splits = matio.load('splits2.mat')
          
-         local train_idx = splits['trainNdxs']
-         local test_idx = splits['testNdxs']
-         
-         local train_idx = train_idx:view(train_idx:nElement())
-         local test_idx = test_idx:view(test_idx:nElement())
-
          local images
          local depths
 
          if mode == 'train' then
+            local train_idx = splits['trainNdxs']
+            local train_idx = train_idx:view(train_idx:nElement())
             images = all_images:index(1, train_idx:long())
             depths = all_depths:index(1, train_idx:long())
          else
+            local test_idx = splits['testNdxs']
+            local test_idx = test_idx:view(test_idx:nElement())
             images = all_images:index(1, test_idx:long())
             depths = all_depths:index(1, test_idx:long())
          end
-         
-         n_data = images:size(1)
 
+         local n_data = images:size(1)
          print('# of data:', n_data)
 
          local input_width = 320
@@ -54,7 +40,6 @@ local function getIterator(mode)
          require 'nnx'
          local input_resample = nn.SpatialReSampling{owidth=input_width,oheight=input_height}
          local output_resample = nn.SpatialReSampling{owidth=output_width,oheight=output_height}
-
          images = input_resample:forward(images:double())
          depths = output_resample:forward(depths:double())
 
@@ -83,34 +68,29 @@ local out_file = arg[4]
 local resume = tonumber(arg[5])
 local lr = tonumber(arg[6])
 
--- set up logistic regressor:
 local net = dofile(model_file)
 local criterion = nn.MSECriterion()
 
 local engine = tnt.OptimEngine()
--- local meter  = tnt.AverageValueMeter()
--- local clerr  = tnt.ClassErrorMeter{topk = {1}}
-
-local loss = 0
-local count = 0
+local meter  = tnt.AverageValueMeter()
 
 engine.hooks.onForwardCriterion = function(state)
-   loss = loss + state.criterion.output
-   count = count + 1
-   -- meter:add(state.criterion.output)
-   -- clerr:add(state.network.output, state.sample.target)
-   -- if state.training then
-   --    print(string.format('avg. loss: %2.4f; avg. error: %2.4f',
-   --                        meter:value(), clerr:value{k = 1}))
-   -- end
+   meter:add(state.criterion.output)
 end
 
 engine.hooks.onEndEpoch = function(state)
-   avg_loss = loss / count
-   print(state.epoch, avg_loss)
-
-   loss = 0
-   count = 0
+   mean, std = meter:value()
+   print(state.epoch, mean)
+   meter:reset()
+   
+   if state.epoch % 50 == 0 then
+     local checkpoint = {}
+     state.network:clearState()
+     checkpoint.model = state.network
+     checkpoint.epoch = state.epoch
+     torch.save(out_file, checkpoint)
+   end
+   
 end
 
 require 'cunn'
@@ -143,14 +123,3 @@ engine:train{
       learningRateDecay = 1e-7,
    }      
 }
-
--- -- measure test loss and error:
--- meter:reset()
--- clerr:reset()
--- engine:test{
---    network   = net,
---    iterator  = getIterator('test'),
---    criterion = criterion,
--- }
--- print(string.format('test loss: %2.4f; test error: %2.4f',
---                     meter:value(), clerr:value{k = 1}))
