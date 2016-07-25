@@ -6,8 +6,8 @@ require 'optim'
 
 require 'data_make3d'
 
-local height = 240
-local width = 320
+local height = 104
+local width = 144
 
 cutorch.setDevice(2)
 

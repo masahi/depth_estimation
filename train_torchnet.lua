@@ -61,12 +61,67 @@ local function getIterator(mode)
    }
 end
 
+local function getIteratorBig(mode)
+   return tnt.ParallelDatasetIterator{
+      nthread = 1,
+      init    = function() require 'torchnet' end,
+      closure = function()
+         
+         local file = io.open("nyu/file_names_shuffled.txt")
+         local file_names = {}
+         local count = 1
+         for line in file:lines() do
+            file_names[count] = 'nyu/' .. line
+            count = count + 1
+         end        
+         
+         local n_data = #file_names
+         print('# of data:', n_data)
+
+         -- local input_width = 280
+         -- local input_height = 200
+
+         -- local output_width = 280
+         -- local output_height = 200
+
+         local input_width = 144
+         local input_height = 104
+
+         local output_width = 144
+         local output_height = 104
+         
+         require 'nnx'
+         local input_resample = nn.SpatialReSampling{owidth=input_width,oheight=input_height}
+         local output_resample = nn.SpatialReSampling{owidth=output_width,oheight=output_height}
+         local matio = require 'matio'
+         
+         return tnt.BatchDataset{
+--            batchsize = 8,
+            batchsize = 32,
+            dataset = tnt.ListDataset{
+               list = torch.range(1, n_data):long(),
+               load = function(idx)
+                  local data = matio.load(file_names[idx])
+                  local rgb = data['rgb']
+                  local depth = data['depth_filled']
+                  rgb = rgb:transpose(3, 1, 2)
+                  rgb = input_resample:forward(rgb:reshape(1, 3, rgb:size(2), rgb:size(3)):double())
+                  depth = output_resample:forward(depth:reshape(1, depth:size(1), depth:size(2)))
+                  return {
+                     input  = rgb[1],
+                     target = depth[1]
+                  }  
+               end,
+            }
+         }
+      end,
+   }
+end
+
 local model_file = arg[1]
 local max_epock = tonumber(arg[2])
 local gpu = tonumber(arg[3])
 local out_file = arg[4]
-local resume = tonumber(arg[5])
-local lr = tonumber(arg[6])
 
 local net = dofile(model_file)
 local criterion = nn.MSECriterion()
@@ -83,7 +138,7 @@ engine.hooks.onEndEpoch = function(state)
    print(state.epoch, mean)
    meter:reset()
    
-   if state.epoch % 50 == 0 then
+   if state.epoch % 5 == 0 then
      local checkpoint = {}
      state.network:clearState()
      checkpoint.model = state.network
@@ -113,7 +168,7 @@ end
 
 engine:train{
    network   = net,
-   iterator  = getIterator('train'),
+   iterator  = getIteratorBig('train'),
    criterion = criterion,
    maxepoch  = max_epoch,
    optimMethod = optim.adadelta,

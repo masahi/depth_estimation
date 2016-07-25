@@ -20,5 +20,5 @@ for scene in train_scene:
     for n in names:
         scene_dirs.append(n[5:])
 
-savemat('train_scenes.mat', {'train_scenes':scene_dirs})
+#savemat('train_scenes.mat', {'train_scenes':scene_dirs})
 not_used = list(set(all_names) - set(scene_dirs))
