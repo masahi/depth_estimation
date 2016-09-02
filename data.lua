@@ -20,11 +20,11 @@ n_data = train_depths:size()[1]
 local idx = 1
 batch_size = 8
 
-local input_width = 320
-local input_height = 240
+local input_width = 280
+local input_height = 200
 
-local output_width = 320
-local output_height = 240
+local output_width = 280
+local output_height = 200
 
 local input_resample = nn.SpatialReSampling{owidth=input_width,oheight=input_height}
 local output_resample = nn.SpatialReSampling{owidth=output_width,oheight=output_height}

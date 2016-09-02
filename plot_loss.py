@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import loadmat
 
-data = np.loadtxt('loss_avg.log')
+data = np.loadtxt('loss.log')
 
 iters = data[:, 0].astype(int)
 loss = data[:, 1]

@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import loadmat, savemat
 
-test_ind = loadmat('splits2.mat')['testNdxs'].flatten() - 1
-train_ind = loadmat('splits2.mat')['trainNdxs'].flatten() - 1
+test_ind = loadmat('splits.mat')['testNdxs'].flatten() - 1
+train_ind = loadmat('splits.mat')['trainNdxs'].flatten() - 1
 
 pred = np.load('pred.npy')
 imgs = np.load('images.npy').transpose((0, 2, 3, 1))

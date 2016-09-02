@@ -3,9 +3,11 @@ import matplotlib.pyplot as plt
 from scipy.io import loadmat, savemat
 
 train_ind = loadmat('../splits.mat')['trainNdxs'].flatten() - 1
+test_ind = loadmat('../splits.mat')['testNdxs'].flatten() - 1
 scenes = loadmat('../scenes.mat')['scenes']
 
 train_scene = np.unique(scenes[train_ind])
+test_scene = np.unique(scenes[test_ind])
 
 scene_dirs = []
 import glob
@@ -20,5 +22,5 @@ for scene in train_scene:
     for n in names:
         scene_dirs.append(n[5:])
 
-#savemat('train_scenes.mat', {'train_scenes':scene_dirs})
+savemat('train_scenes.mat', {'train_scenes':scene_dirs})
 not_used = list(set(all_names) - set(scene_dirs))

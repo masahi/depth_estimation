@@ -8,6 +8,7 @@ test
 *.pdf
 *.html
 *.txt
+*.loss
 data
 toolbox
 training

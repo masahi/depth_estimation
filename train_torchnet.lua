@@ -6,17 +6,22 @@ local gpu = tonumber(arg[3])
 local out_file = arg[4]
 
 local net = dofile(model_file)
-local criterion = nn.MSECriterion()
+
+require 'MaskedMSECriterion'
+local criterion = nn.MaskedMSECriterion()
 
 local engine = tnt.OptimEngine()
 local meter  = tnt.AverageValueMeter()
 
 engine.hooks.onForwardCriterion = function(state)
    meter:add(state.criterion.output)
+   print(state.criterion.output)
 end
 
 engine.hooks.onUpdate = function(state)
+   state.sample = nil   
    collectgarbage()
+   collectgarbage()   
 end
 
 engine.hooks.onEndEpoch = function(state)
@@ -57,7 +62,7 @@ require 'optim'
 
 engine:train{
    network   = net,
-   iterator  = getIteratorRaw2('train'),
+   iterator  = getIteratorRaw('train'),
    criterion = criterion,
    maxepoch  = max_epoch,
    optimMethod = optim.adadelta,

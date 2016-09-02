@@ -62,7 +62,7 @@ end
 
 function getIteratorRaw(mode)
    return tnt.ParallelDatasetIterator{
-      nthread = 1,
+      nthread = 4,
       init    = function() require 'torchnet' end,
       closure = function()
          
@@ -92,7 +92,7 @@ function getIteratorRaw(mode)
          require 'nnx'
          local input_resample = nn.SpatialReSampling{owidth=input_width,oheight=input_height}
          local output_resample = nn.SpatialReSampling{owidth=output_width,oheight=output_height}
-         local matio = require 'matio'
+         local npy4th = require 'npy4th'
          
          return tnt.BatchDataset{
             batchsize = 8,
@@ -100,12 +100,13 @@ function getIteratorRaw(mode)
             dataset = tnt.ListDataset{
                list = torch.range(1, n_data):long(),
                load = function(idx)
-                  local data = matio.load(file_names[idx])
-                  local rgb = data['rgb']
-                  local depth = data['depth_filled']
-                  rgb = rgb:transpose(3, 1, 2)
+                  local rgb = npy4th.loadnpy(file_names[idx] .. '_rgb.npy')
+                  local depth = npy4th.loadnpy(file_names[idx] .. '_depth.npy')   
+                  
+                  rgb = rgb:permute(3, 1, 2)
                   rgb = input_resample:forward(rgb:reshape(1, 3, rgb:size(2), rgb:size(3)):double())
                   depth = output_resample:forward(depth:reshape(1, depth:size(1), depth:size(2)))
+                  -- flip--
                   return {
                      input  = rgb[1],
                      target = depth[1]
@@ -114,50 +115,5 @@ function getIteratorRaw(mode)
             }
          }
       end,
-   }
-end
-
-local file = io.open("nyu/file_names_shuffled.txt")
-local file_names = {}
-local count = 1
-for line in file:lines() do
-   file_names[count] = 'nyu/' .. line
-   count = count + 1
-end        
-
-local n_data = #file_names
-print('# of data:', n_data)
-
-local input_width = 280
-local input_height = 200
-
-local output_width = 280
-local output_height = 200
-
-require 'nnx'
-local input_resample = nn.SpatialReSampling{owidth=input_width,oheight=input_height}
-local output_resample = nn.SpatialReSampling{owidth=output_width,oheight=output_height}
-local matio = require 'matio'
-
-function getIteratorRaw2(mode)
-   return tnt.DatasetIterator{
-         dataset =  tnt.BatchDataset{
-            batchsize = 8,
-            dataset = tnt.ListDataset{
-               list = torch.range(1, n_data):long(),
-               load = function(idx)
-                  local data = matio.load(file_names[idx])
-                  local rgb = data['rgb']
-                  local depth = data['depth_filled']
-                  rgb = rgb:transpose(3, 1, 2)
-                  rgb = input_resample:forward(rgb:reshape(1, 3, rgb:size(2), rgb:size(3)):double())
-                  depth = output_resample:forward(depth:reshape(1, depth:size(1), depth:size(2)))
-                  return {
-                     input  = rgb[1],
-                     target = depth[1]
-                  }  
-               end,
-            }
-         }
    }
 end

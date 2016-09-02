@@ -4,11 +4,12 @@ n_scenes = size(train_scenes,1);
 
 datasetDir = 'data';
 
-all_file_names = fopen('file_names.txt', 'w');
+all_file_names = fopen('file_names2.txt', 'w');
 failed_scenes = fopen('failed_scenes.txt', 'w');
 
-for i=1:n_scenes
+for i=245:n_scenes
     sceneName = strtrim(train_scenes(i, :));
+    disp(sceneName)
     try
       framelist = get_synched_frames(['data/' sceneName ]);
     catch 
@@ -21,7 +22,7 @@ for i=1:n_scenes
     mkdir(savedir)
     n_frames = length(framelist);
     
-    for j=[1:5:n_frames]
+    for j=1:n_frames
         
         file_name = [savedir '/' int2str(j) '.mat'];
         
