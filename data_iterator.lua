@@ -60,57 +60,57 @@ function getIterator(mode)
    }
 end
 
-function getIteratorRaw(mode)
+function get_nyu_full_iterator()
    return tnt.ParallelDatasetIterator{
       nthread = 4,
       init    = function() require 'torchnet' end,
       closure = function()
          
-         local file = io.open("nyu/file_names_shuffled.txt")
+         local file = io.open("data/nyu/train.txt")
          local file_names = {}
          local count = 1
          for line in file:lines() do
-            file_names[count] = 'nyu/' .. line
+            file_names[count] = 'data/nyu/' .. line
             count = count + 1
          end        
          
          local n_data = #file_names
-         print('# of data:', n_data)
-
-         local input_width = 280
-         local input_height = 200
-
-         local output_width = 280
-         local output_height = 200
-
-         -- local input_width = 144
-         -- local input_height = 104
-
-         -- local output_width = 144
-         -- local output_height = 104
          
+         local input_width = 288
+         local input_height = 224
+      
+         local output_width = input_width
+         local output_height = input_height
+      
          require 'nnx'
-         local input_resample = nn.SpatialReSampling{owidth=input_width,oheight=input_height}
-         local output_resample = nn.SpatialReSampling{owidth=output_width,oheight=output_height}
          local npy4th = require 'npy4th'
+         local image = require 'image'
+
+         local randomkit = require 'randomkit'
          
          return tnt.BatchDataset{
             batchsize = 8,
---            batchsize = 32,
+
             dataset = tnt.ListDataset{
                list = torch.range(1, n_data):long(),
                load = function(idx)
                   local rgb = npy4th.loadnpy(file_names[idx] .. '_rgb.npy')
-                  local depth = npy4th.loadnpy(file_names[idx] .. '_depth.npy')   
+                  local depth = npy4th.loadnpy(file_names[idx] .. '_depth.npy')
+
+                  rgb = rgb:permute(3, 1, 2):double()
+
+                  if randomkit.randint(1,2) == 1 then                  
+                    rgb = image.hflip(rgb)
+                    depth = image.hflip(depth)
+                  end
                   
-                  rgb = rgb:permute(3, 1, 2)
-                  rgb = input_resample:forward(rgb:reshape(1, 3, rgb:size(2), rgb:size(3)):double())
-                  depth = output_resample:forward(depth:reshape(1, depth:size(1), depth:size(2)))
-                  -- flip--
+                  rgb = image.scale(rgb, input_width, input_height)
+                  depth = image.scale(depth, output_width, output_height)
+                  
                   return {
-                     input  = rgb[1],
-                     target = depth[1]
-                  }  
+                      input=rgb,
+                      target=depth
+                  }                    
                end,
             }
          }

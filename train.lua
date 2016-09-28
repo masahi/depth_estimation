@@ -1,101 +1,149 @@
-require 'cutorch'
-require 'nn'
 require 'cunn'
+require 'cutorch'
 require 'cudnn'
-require 'optim'
-require 'data'
 
-local npy4th = require 'npy4th'
+local tnt = require 'torchnet'
 
 local model_file = arg[1]
 local max_epock = tonumber(arg[2])
 local gpu = tonumber(arg[3])
-local out_file = arg[4]
+local out_dir = arg[4]
 local resume = tonumber(arg[5])
-local lr = tonumber(arg[6])
 
-cutorch.setDevice(gpu)
-print('Learning rate', lr)
+local net = dofile(model_file)
+local iter = 1
+
 if resume == 1 then
-   checkpoint = torch.load(model_file)
-   cnn = checkpoint.model
-   iter_begin = checkpoint.iter + 1
-   print('resuming from iter', iter_begin)   
-else
-   print('training from scratch') 
-   cnn = dofile(model_file)
-   iter_begin = 1
-end  
-
-cnn:cuda()
-criterion = nn.MSECriterion()
---criterion.sizeAverage = false
-criterion:cuda()
-
-cudnn.convert(cnn, cudnn)
-
-cnn:training()
-parameters, gradParameters = cnn:getParameters()
-
-print('Number of parameters:', parameters:size()[1])
-
-function f(param)
-   if param ~= parameters then parameters:copy(x) end
-   gradParameters:zero()
-   
-   local input, gt = load_data()
-
-   input = input:cuda()
-   gt = gt:cuda()
-   
-   local output = cnn:forward(input)
-
-   local loss =  criterion:forward(output, gt)
-   local df_do = criterion:backward(output, gt)
-   cnn:backward(input, df_do)
-
-   return loss, gradParameters
+   local checkpoint = torch.load(arg[6])
+   net = checkpoint.model
+   --iter = checkpoint.iter + 1
 end
 
-optimState = {
-  learningRate = lr,
-  weightDecay = 0.0005,
-  momentum = 0.9,
-  learningRateDecay = 1e-7,
-}
+require 'MaskedMSECriterion'
+local criterion = nn.MaskedMSECriterion()
+--local criterion = nn.MSECriterion()
+local engine = tnt.OptimEngine()
+local meter  = tnt.AverageValueMeter()
 
-function train()
-   local n_iter = n_data / batch_size
+local input_width = 288
+local input_height = 224
+
+local output_width = input_width
+local output_height = input_height
+
+local rgb_mean = 109.31410628
+local npy4th = require 'npy4th'
+
+local input = npy4th.loadnpy('data/nyu/npy/test_images.npy')
+local gt = npy4th.loadnpy('data/nyu/npy/test_depths.npy')
+
+local image = require('image')
+
+function validate(state)
+   state.network:evaluate()
+
+   local n_test = input:size(1)
+   local loss = 0
+
+   for i=1, n_test do
+      local rgb = image.scale(input[i]:double(), input_width, input_height)
+      local inp = rgb:reshape(1,3,input_height,input_width) - rgb_mean
+      local out = state.network:forward(inp:cuda())
+      local gt_depth = image.scale(gt[i], input_width, input_height)
+      local diff = gt_depth:cuda() - out[1][1]
+      loss = loss + diff:pow(2):mean()
+   end
+
+   local test_loss = loss / n_test
+
+   local file = io.open("data/nyu/val.txt")
 
    loss = 0
-   for i = 1, n_iter do
-     params, fs = optim.adadelta(f, parameters, optimState)
---     params, fs = optim.sgd(f, parameters, optimState)     
-     loss = loss + fs[1]
+   local n_val = 0
+   for line in file:lines() do
+     file_name = 'data/nyu/' .. line
+     local rgb = npy4th.loadnpy(file_name .. '_rgb.npy')
+     local depth = npy4th.loadnpy(file_name .. '_depth.npy')
+     rgb = rgb:permute(3, 1, 2)     
+     rgb = image.scale(rgb:double(), input_width, input_height)
+     local inp = rgb:reshape(1,3,input_height,input_width) - rgb_mean
+     local out = state.network:forward(inp:cuda())
+     local gt_depth = image.scale(depth, input_width, input_height)
+     local diff = gt_depth:cuda() - out[1][1]
+     loss = loss + diff:pow(2):mean()
+     n_val = n_val + 1
    end
 
-   return loss / n_iter
+   local val_loss = loss / n_val
    
+   state.network:training()
+   
+   return val_loss, test_loss 
 end
 
-for i = iter_begin, max_epock do
---i = 1
---while true do
-   avg_loss = train()
-   print(i, avg_loss)
+cutorch.setDevice(gpu)   
+net = net:cuda()
+criterion = criterion:cuda()
+cudnn.convert(net, cudnn)
+net:training()
 
-   if i % 10 == 0 then
-      --TODO train, test acc
-   end   
-    
-   if i % 50 == 0 then
-     local checkpoint = {}
-     cnn:clearState()
-     checkpoint.model = cnn
-     checkpoint.iter = i
-     torch.save(out_file, checkpoint)
+local igpu, tgpu = torch.CudaTensor(), torch.CudaTensor()
+local timer = torch.Timer()
+engine.hooks.onSample = function(state)
+   igpu:resize(state.sample.input:size() ):copy(state.sample.input - rgb_mean)
+   tgpu:resize(state.sample.target:size()):copy(state.sample.target)
+   state.sample.input  = igpu
+   state.sample.target = tgpu
+end  
+
+engine.hooks.onForwardCriterion = function(state)
+   meter:add(state.criterion.output)
+end
+
+engine.hooks.onBackward = function(state)
+end
+
+local val_freq = 5000
+
+require 'sys'
+engine.hooks.onUpdate = function(state)
+
+   if iter % val_freq == 0 then
+
+--      local timer = torch.Timer()
+      val_loss, test_loss = validate(state)
+--      print('validation time: ', timer:time().real)
+      mean, std = meter:value()
+      print(iter, mean, val_loss, test_loss)
+      meter:reset()
+      
+      local checkpoint = {}
+      state.network:clearState()
+      checkpoint.model = state.network
+      checkpoint.iter = state.iter
+      checkpoint.val_loss = val_loss
+
+      torch.save(out_dir .. '/' .. iter .. '.t7' , checkpoint)
+      
+      collectgarbage()
+      collectgarbage()
    end
- 
-  i = i + 1
    
+   iter = iter + 1
 end
+
+require 'data_iterator'
+require 'optim'
+
+engine:train{
+   network   = net,
+   iterator  = get_nyu_full_iterator(),
+   criterion = criterion,
+   maxepoch  = max_epoch,
+   optimMethod = optim.adadelta,
+   optimState = {
+      weightDecay = 0.0005,
+      momentum = 0.9,
+      learningRateDecay = 1e-7,
+   }      
+}

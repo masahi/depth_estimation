@@ -11,9 +11,8 @@ end
 function MaskedMSECriterion:updateOutput(input, target)
 
    local mask = torch.lt(target, 0.0001)
-
    input[mask] = 0
-
+   
    self.output = self.mse:updateOutput(input, target)
    
    self.n_valid = input:nElement() - mask:sum()

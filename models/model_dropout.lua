@@ -18,12 +18,15 @@ out_idx = 1
 for i = 1,3 do
    cnn:add(nn.SpatialConvolution(n_inputs[in_idx], n_outputs[out_idx], 5, 5, 2, 2 ,2, 2))
    cnn:add(nn.SpatialBatchNormalization(n_outputs[out_idx])):add(nn.ReLU(true))
+   cnn:add(nn.Dropout(0.3))
    
    cnn:add(nn.SpatialConvolution(n_inputs[in_idx+1], n_outputs[out_idx+1], 3, 3, 1,1,1,1))
    cnn:add(nn.SpatialBatchNormalization(n_outputs[out_idx+1])):add(nn.ReLU(true))
+   cnn:add(nn.Dropout(0.3))   
    
    cnn:add(nn.SpatialConvolution(n_inputs[in_idx+2], n_outputs[out_idx+2], 3, 3, 1,1,1,1))
    cnn:add(nn.SpatialBatchNormalization(n_outputs[out_idx+2])):add(nn.ReLU(true))
+   cnn:add(nn.Dropout(0.3))   
 
    in_idx = in_idx + 3
    out_idx = out_idx + 3

@@ -4,18 +4,22 @@ local cnn = nn.Sequential()
 
 n_inputs = torch.LongTensor({3, 48, 128,
                              128, 256, 256,
-                             256, 256, 512
+                             256, 256, 512,
+                             512, 512, 512,
+                             512, 512, 512
                              })
 
 n_outputs = torch.LongTensor({48, 128, 128,
                               256, 256, 256,
                               256, 512, 512,
+                              512, 512, 512,
+                              512, 512, 512                              
                              })
 
 in_idx = 1
 out_idx = 1
 
-for i = 1,3 do
+for i = 1,5 do
    cnn:add(nn.SpatialConvolution(n_inputs[in_idx], n_outputs[out_idx], 5, 5, 2, 2 ,2, 2))
    cnn:add(nn.SpatialBatchNormalization(n_outputs[out_idx])):add(nn.ReLU(true))
    
@@ -29,12 +33,18 @@ for i = 1,3 do
    out_idx = out_idx + 3
 end
 
-n_inputs = torch.LongTensor({512, 512, 256,
+n_inputs = torch.LongTensor({
+                             512, 512, 512,
+                             512, 512, 512 ,                             
+                             512, 512, 256,
                              256, 256, 256,
                              128, 128, 48
                              })
 
-n_outputs = torch.LongTensor({512, 256, 256,
+n_outputs = torch.LongTensor({
+                              512, 512, 512,
+                              512, 512, 512,                             
+                              512, 256, 256,
                               256, 256, 128,
                               128, 48, 1
                              })
@@ -42,7 +52,7 @@ n_outputs = torch.LongTensor({512, 256, 256,
 in_idx = 1
 out_idx = 1
 
-for i = 1,3 do
+for i = 1,5 do
    cnn:add(nn.SpatialFullConvolution(n_inputs[in_idx], n_outputs[out_idx], 4, 4, 2, 2 ,1, 1))
    cnn:add(nn.SpatialBatchNormalization(n_outputs[out_idx])):add(nn.ReLU(true))
    

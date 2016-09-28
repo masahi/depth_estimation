@@ -4,15 +4,15 @@ require 'nnx'
 require 'cunn'
 require 'cudnn'
 require 'optim'
-require 'data'
 
 local npy4th = require 'npy4th'
+local input = npy4th.loadnpy('data/nyu/npy/test_images.npy')
+local gt = npy4th.loadnpy('data/nyu/npy/test_depths.npy')
 
-input, gt = load_all_data()
 print(input:size())
 cutorch.setDevice(1)
 --cnn = torch.load('model3.t7').model
-cnn = torch.load('model_big_par.t7').model
+cnn = torch.load('.t7').model
 cnn:evaluate()
 cnn:cuda()
 cudnn.convert(cnn, cudnn)
@@ -33,3 +33,4 @@ end
 
 npy4th.savenpy('pred.npy', pred)
 
+n
