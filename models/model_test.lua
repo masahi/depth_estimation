@@ -4,7 +4,6 @@ require 'cunn'
 require 'cudnn'
 require 'optim'
 
-
 local height = 224
 local width = 288
 
@@ -12,7 +11,7 @@ cutorch.setDevice(1)
 
 model_file = 'model_novgg.lua'
 cnn = dofile(model_file)
-cnn:cuda()
+cnn = cnn:cuda()
 
 cudnn.convert(cnn, cudnn)
 

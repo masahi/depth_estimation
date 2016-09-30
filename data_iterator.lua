@@ -60,7 +60,7 @@ function getIterator(mode)
    }
 end
 
-function get_nyu_full_iterator()
+function get_nyu_full_iterator(input_width, input_height, batch_size)
    return tnt.ParallelDatasetIterator{
       nthread = 4,
       init    = function() require 'torchnet' end,
@@ -76,9 +76,6 @@ function get_nyu_full_iterator()
          
          local n_data = #file_names
          
-         local input_width = 288
-         local input_height = 224
-      
          local output_width = input_width
          local output_height = input_height
       
@@ -89,7 +86,7 @@ function get_nyu_full_iterator()
          local randomkit = require 'randomkit'
          
          return tnt.BatchDataset{
-            batchsize = 8,
+            batchsize = batch_size,
 
             dataset = tnt.ListDataset{
                list = torch.range(1, n_data):long(),

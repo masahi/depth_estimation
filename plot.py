@@ -27,7 +27,7 @@ def get_nyu_data():
 
     return imgs, gts, test_ind, train_ind
     
-def plot_depth(pred, ind):
+def plot_depth(pred, imgs, gts, ind):
     plt.gray()    
     for i in range(ind.shape[0]):
         plt.figure(figsize=(18,15))
@@ -36,11 +36,38 @@ def plot_depth(pred, ind):
         plt.axis('off')
         
         plt.subplot(1,3,2)
-        plt.imshow(pred[ind[i]])
+        plt.imshow(pred[i])
         plt.axis('off')
     
         plt.subplot(1,3,3)
         plt.imshow(gts[ind[i]])
+        plt.axis('off')
+        
+        plt.show()
+
+def plot_depth_train():
+    imgs = np.load('rgb_train.npy')
+    gts = np.load('depth_train.npy')
+    preds = np.load('pred_train.npy')
+
+    plt.gray()
+
+    print(imgs.shape)
+    print(gts.shape)
+    print(preds.shape)
+    
+    for i in range(imgs.shape[0]):
+        plt.figure(figsize=(18,15))
+        plt.subplot(1,3,1)
+        plt.imshow(imgs[i])
+        plt.axis('off')
+        
+        plt.subplot(1,3,2)
+        plt.imshow(preds[i])
+        plt.axis('off')
+    
+        plt.subplot(1,3,3)
+        plt.imshow(gts[i])
         plt.axis('off')
         
         plt.show()

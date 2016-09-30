@@ -2,16 +2,22 @@ local MaskedMSECriterion, parent = torch.class('nn.MaskedMSECriterion', 'nn.Crit
 
 require 'nn'
 
-function MaskedMSECriterion:__init()
+function MaskedMSECriterion:__init(use_log_depth)
    parent.__init(self, false)
    self.mse = nn.MSECriterion()
    self.mse.sizeAverage = false
+   self.use_log_depth = use_log_depth
 end
 
 function MaskedMSECriterion:updateOutput(input, target)
 
    local mask = torch.lt(target, 0.0001)
    input[mask] = 0
+
+   if self.use_log_depth then
+      target = torch.log(target)
+      target[mask] = 0
+   end
    
    self.output = self.mse:updateOutput(input, target)
    
