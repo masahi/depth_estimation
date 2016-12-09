@@ -26,20 +26,27 @@ def get_nyu_data():
     train_ind = loadmat('data/nyu/mat/splits.mat')['trainNdxs'].flatten() - 1
 
     return imgs, gts, test_ind, train_ind
+
+def get_3dv_result():
+    pred = loadmat('/home/masa/research/FCRN-DepthPrediction/matlab/NYU/pred.mat')['predictions']
+    return pred.transpose((2, 0, 1))
     
-def plot_depth(pred, imgs, gts, ind):
-    plt.gray()    
+def plot_depth(preds, imgs, gts, ind):
+    plt.gray()
+    n_plot = len(preds)+2
     for i in range(ind.shape[0]):
         plt.figure(figsize=(18,15))
-        plt.subplot(1,3,1)
+
+        plt.subplot(1,n_plot,1)
         plt.imshow(imgs[ind[i]])
         plt.axis('off')
-        
-        plt.subplot(1,3,2)
-        plt.imshow(pred[i])
-        plt.axis('off')
+
+        for (j,pred) in enumerate(preds):
+           plt.subplot(1,n_plot,2+j)
+           plt.imshow(pred[i])
+           plt.axis('off')
     
-        plt.subplot(1,3,3)
+        plt.subplot(1,n_plot,n_plot)
         plt.imshow(gts[ind[i]])
         plt.axis('off')
         

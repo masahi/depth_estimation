@@ -2,6 +2,7 @@ require 'nn'
 
 local cnn = nn.Sequential()
 
+n_blocks = 5
 n_inputs = torch.LongTensor({3, 48, 128,
                              128, 256, 256,
                              256, 256, 512,
@@ -19,7 +20,7 @@ n_outputs = torch.LongTensor({48, 128, 128,
 in_idx = 1
 out_idx = 1
 
-for i = 1,5 do
+for i = 1,n_blocks do
    cnn:add(nn.SpatialConvolution(n_inputs[in_idx], n_outputs[out_idx], 5, 5, 2, 2 ,2, 2))
    cnn:add(nn.SpatialBatchNormalization(n_outputs[out_idx])):add(nn.ReLU(true))
    
@@ -52,7 +53,7 @@ n_outputs = torch.LongTensor({
 in_idx = 1
 out_idx = 1
 
-for i = 1,5 do
+for i = 1,n_blocks do
    cnn:add(nn.SpatialFullConvolution(n_inputs[in_idx], n_outputs[out_idx], 4, 4, 2, 2 ,1, 1))
    cnn:add(nn.SpatialBatchNormalization(n_outputs[out_idx])):add(nn.ReLU(true))
    
@@ -61,7 +62,7 @@ for i = 1,5 do
    
    cnn:add(nn.SpatialConvolution(n_inputs[in_idx+2], n_outputs[out_idx+2], 3, 3, 1,1,1,1))
 
-   if i < 3 then
+   if i < n_blocks then
    cnn:add(nn.SpatialBatchNormalization(n_outputs[out_idx+2])):add(nn.ReLU(true))
    end
    

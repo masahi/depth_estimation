@@ -9,9 +9,14 @@ local width = 288
 
 cutorch.setDevice(1)
 
-model_file = 'model_novgg.lua'
+model_file = 'model_resnet.lua'
+
 cnn = dofile(model_file)
-cnn = cnn:cuda()
+cnn:float()
+params, gradParams = cnn:getParameters()
+print(params:size())
+
+cnn:cuda()
 
 cudnn.convert(cnn, cudnn)
 

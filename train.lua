@@ -1,6 +1,6 @@
-require 'cunn'
 require 'cutorch'
 require 'cudnn'
+require 'cunn'
 
 local tnt = require 'torchnet'
 
@@ -14,7 +14,7 @@ local net = dofile(model_file)
 require "lfs"
 lfs.mkdir(out_dir)
 local iter = 1
-
+cutorch.setDevice(gpu)   
 if resume == 1 then
    local checkpoint = torch.load(arg[6])
    net = checkpoint.model
@@ -33,14 +33,29 @@ local meter  = tnt.AverageValueMeter()
 -- local batch_size = 2
 local input_width = 288
 local input_height = 224
-local batch_size = 8
+local batch_size = 4
 local val_freq = 5000
 --local val_freq = 1
 
 local output_width = input_width
 local output_height = input_height
 
-local rgb_mean = 109.31410628
+local nyu_mean = 109.31410628
+local resnet_mean = {0.485, 0.456, 0.406} 
+local resnet_std = {0.229, 0.224, 0.225}
+
+function preprocess(input)
+   if batch_size == 4 then -- resnet
+      input = input:float() / 255
+      for i=1,3 do
+         input[1][i]:add(-resnet_mean[i]):div(resnet_std[i])
+      end
+      return input
+   else   
+      return input - nyu_mean
+   end
+end
+
 local npy4th = require 'npy4th'
 
 local input = npy4th.loadnpy('data/nyu/npy/test_images.npy')
@@ -60,7 +75,7 @@ function validate(state)
    local timer = torch.Timer()
    for i=1, n_test do
       local rgb = image.scale(input[i]:double(), input_width, input_height)
-      local inp = rgb:reshape(1,3,input_height,input_width) - rgb_mean
+      local inp = preprocess(rgb:reshape(1,3,input_height,input_width))
       local out = state.network:forward(inp:cuda())
       local gt_depth = image.scale(gt[i], input_width, input_height)
       local diff = gt_depth:cuda() - out[1][1]
@@ -79,17 +94,18 @@ function validate(state)
      file_name = 'data/nyu/' .. line
      local rgb = npy4th.loadnpy(file_name .. '_rgb.npy')
      local depth = npy4th.loadnpy(file_name .. '_depth.npy')
-
+     local gt_depth = image.scale(depth, input_width, input_height)
+     local mask = torch.lt(gt_depth, 0.0001)
+     
      if use_log_depth then
-        depth = torch.log(depth)
+        gt_depth = torch.log(gt_depth)
      end
 
      rgb = rgb:permute(3, 1, 2)     
      rgb = image.scale(rgb:double(), input_width, input_height)
-     local inp = rgb:reshape(1,3,input_height,input_width) - rgb_mean
+     local inp = preprocess(rgb:reshape(1,3,input_height,input_width))
      local out = state.network:forward(inp:cuda())
-     local gt_depth = image.scale(depth, input_width, input_height)
-     local mask = torch.lt(gt_depth, 0.0001)
+
      local pred = out[1][1]:double()
 
      pred[mask] = 0
@@ -107,7 +123,7 @@ function validate(state)
    return val_loss, test_loss 
 end
 
-cutorch.setDevice(gpu)   
+
 net = net:cuda()
 criterion = criterion:cuda()
 cudnn.convert(net, cudnn)
@@ -119,7 +135,7 @@ net:training()
 local igpu, tgpu = torch.CudaTensor(), torch.CudaTensor()
 local timer = torch.Timer()
 engine.hooks.onSample = function(state)
-   igpu:resize(state.sample.input:size() ):copy(state.sample.input - rgb_mean)
+   igpu:resize(state.sample.input:size() ):copy(preprocess(state.sample.input))
    tgpu:resize(state.sample.target:size()):copy(state.sample.target)
    state.sample.input  = igpu
    state.sample.target = tgpu
@@ -138,11 +154,12 @@ require 'sys'
 engine.hooks.onUpdate = function(state)
 
    if iter % val_freq == 0 then
---      local timer = torch.Timer()
+
+      mean, std = meter:value()      
       val_loss, test_loss = validate(state)
---      print('validation time: ', timer:time().real)
-      mean, std = meter:value()
-      print(iter, mean, val_loss, test_loss)
+      print(iter, mean, val_loss, test_loss)      
+--      print(iter, mean)
+      
       meter:reset()
       
       local checkpoint = {}
@@ -169,9 +186,14 @@ engine:train{
    criterion = criterion,
    maxepoch  = max_epoch,
    optimMethod = optim.adadelta,
+--   optimMethod = optim.sgd,
+--   optimMethod = optim.adam,      
    optimState = {
       weightDecay = 0.0005,
       momentum = 0.9,
       learningRateDecay = 1e-7,
-   }      
+   },
+   config = {
+      learningRate = 1e-2
+   }
 }

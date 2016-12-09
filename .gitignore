@@ -9,6 +9,7 @@ test
 *.html
 *.txt
 *.loss
+*.ply
 data
 toolbox
 training

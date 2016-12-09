@@ -9,10 +9,21 @@ local npy4th = require 'npy4th'
 local image = require 'image'
 local width = 320
 local height = 256
+local rgb_mean = 109.31410628
+
+function preprocess(input)
+   input = input:float() / 255
+   local resnet_mean = {0.485, 0.456, 0.406} 
+   local resnet_std = {0.229, 0.224, 0.225}
+   for i=1,3 do
+      input[1][i]:add(-resnet_mean[i]):div(resnet_std[i])
+   end
+   return input
+end
 
 function eval_test(model_file)
 
-   local input = npy4th.loadnpy('data/nyu/npy/test_images.npy')
+   local input = npy4th.loadnpy('data/nyu/npy/test_images.npy') - rgb_mean
    local gt = npy4th.loadnpy('data/nyu/npy/test_depths.npy')
    
    cutorch.setDevice(1)
@@ -27,7 +38,8 @@ function eval_test(model_file)
    for i=1,pred:size()[1] do
       print(i)
       inp = image.scale(input[i], width, height)
-      inp = inp:reshape(1,3,height,width)
+      inp = preprocess(inp:reshape(1,3,height,width))
+--      inp = inp:reshape(1,3,height,width)      
       --print(i, pred:size())
       out = cnn:forward(inp:cuda())
       --print(out:size())
@@ -46,7 +58,7 @@ function eval_train(model_file)
       count = count + 1
    end        
    
-   cutorch.setDevice(1)
+   cutorch.setDevice(2)
    
    local cnn = torch.load(model_file).model
    cnn:evaluate()
@@ -64,7 +76,7 @@ function eval_train(model_file)
       local rgb = npy4th.loadnpy(file_names[idx] .. '_rgb.npy')
       local depth = npy4th.loadnpy(file_names[idx] .. '_depth.npy')
       
-      rgbs[i] = rgb
+      rgbs[i] = rgb 
          
       rgb = rgb:permute(3, 1, 2)
       rgb = image.scale(rgb, width, height)
@@ -72,7 +84,7 @@ function eval_train(model_file)
       
       depths[i] = depth
    
-      out = cnn:forward(rgb:reshape(1, 3, height, width):cuda())
+      out = cnn:forward(preprocess(rgb:reshape(1, 3, height, width)):cuda())
       pred[i] = out[1]:double()
    
    end
@@ -83,4 +95,4 @@ function eval_train(model_file)
       
 end
 
-eval_test('exp/param/85000.t7')
+eval_train('exp/1021_resnet_droput/445000.t7')
