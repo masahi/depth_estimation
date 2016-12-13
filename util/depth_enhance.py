@@ -6,8 +6,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse import csr_matrix, spdiags
 from pyamg import solve
+from depth_to_3d import depth_to_3d
 
-def depth_enhance(depth, edge):
+def depth_enhance(depth, edge, smooth_coeff = 10, edge_thres = 0.5):
     rows = []
     cols = []
     rhs = []
@@ -16,9 +17,6 @@ def depth_enhance(depth, edge):
     height, width = depth.shape
     n_pixels = height * width
 
-    edge_thres = 0.5
-    smooth_coeff = 10
-    
     for i in range(height):
         for j in range(width):
             index = j + i * width
@@ -59,7 +57,7 @@ def depth_enhance(depth, edge):
 
 plt.gray()
 base_dir = '/home/masa/torch/code/vision/relative_depth/src/experiment/'
-file_names = os.listdir(base_dir + 'imgs')
+file_names = [file_name for file_name in  os.listdir(base_dir + 'imgs') if file_name.endswith('doc.mat')]
 
 for (i, name) in enumerate(file_names):
     if not name.endswith('doc.mat'):
@@ -67,12 +65,15 @@ for (i, name) in enumerate(file_names):
 
     imname = name[:-8]
     depth_name = name[:-12] + '_depth.png'
-    print(imname)
+    print(i, imname)
     rgb = imread(base_dir + 'imgs/' + imname)
     edge = loadmat(base_dir + 'imgs/' + name)['edge']
     depth = imread(base_dir + 'imgs/' + depth_name)
     depth_enhanced = depth_enhance(depth, edge)
-    
+
+    #depth_to_3d(rgb, depth, 'mesh/%s.ply' % imname)
+    #depth_to_3d(rgb, depth_enhanced, 'mesh/%s_enhanced.ply' % imname)
+                    
     plt.figure(figsize=(18,15))        
     plt.subplot(1, 4, 1)
     plt.imshow(rgb)
@@ -91,37 +92,41 @@ for (i, name) in enumerate(file_names):
     plt.title('depth edge enhanced')
 
     plt.show()
-    
-file_names = os.listdir(base_dir + 'output_diw')
 
-for (i, name) in enumerate(file_names):
-    if not name.endswith('doc.mat'):
-        continue
+    
+# file_names = os.listdir(base_dir + 'output_diw')
 
-    imname = name[:-8]
-    depth_name = name[:-16] + '_depth.png'
-    print(imname)
-    rgb = imread(base_dir + 'output_diw/' + imname)
-    edge = loadmat(base_dir + 'output_diw/' + name)['edge']
-    depth = imread(base_dir + 'output_nyu_diw/' + depth_name)
-    depth_enhanced = depth_enhance(depth, edge)
+# for (i, name) in enumerate(file_names):
+#     if not name.endswith('doc.mat'):
+#         continue
+
+#     imname = name[:-8]
+#     depth_name = name[:-16] + '_depth.png'
+#     print(imname)
+#     rgb = imread(base_dir + 'output_diw/' + imname)
+#     edge = loadmat(base_dir + 'output_diw/' + name)['edge']
+#     depth = imread(base_dir + 'output_nyu_diw/' + depth_name)
+#     depth_enhanced = depth_enhance(depth, edge)
+
+#     depth_to_3d(rgb, depth, 'mesh/%s.ply' % imname)
+#     depth_to_3d(rgb, depth_enhanced, 'mesh/%s_enhanced.ply' % imname)
     
-    plt.figure(figsize=(18,15))        
-    plt.subplot(1, 4, 1)
-    plt.imshow(rgb)
-    plt.axis('off')
-    plt.subplot(1, 4, 2)    
-    plt.imshow(edge > 0.5)
-    plt.axis('off')
-    plt.title('bounday')        
-    plt.subplot(1, 4, 3)    
-    plt.imshow(depth)
-    plt.axis('off')
-    plt.title('nips16 depth')        
-    plt.subplot(1, 4, 4)    
-    plt.imshow(depth_enhanced)
-    plt.axis('off')
-    plt.title('depth edge enhanced')
+#     plt.figure(figsize=(18,15))        
+#     plt.subplot(1, 4, 1)
+#     plt.imshow(rgb)
+#     plt.axis('off')
+#     plt.subplot(1, 4, 2)    
+#     plt.imshow(edge > 0.5)
+#     plt.axis('off')
+#     plt.title('bounday')        
+#     plt.subplot(1, 4, 3)    
+#     plt.imshow(depth)
+#     plt.axis('off')
+#     plt.title('nips16 depth')        
+#     plt.subplot(1, 4, 4)    
+#     plt.imshow(depth_enhanced)
+#     plt.axis('off')
+#     plt.title('depth edge enhanced')
     
-    plt.show()
+#     plt.show()
 

@@ -10,8 +10,10 @@ test
 *.txt
 *.loss
 *.ply
+*.pyc
 data
 toolbox
 training
 param
 exp
+mesh
